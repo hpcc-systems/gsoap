@@ -10,7 +10,7 @@ Use soapcpp2 option -Ipath:path:... to specify the path(s) for #import
 gSOAP XML Web services tools
 Copyright (C) 2000-2005, Robert van Engelen, Genivia Inc., All Rights Reserved.
 This part of the software is released under one of the following licenses:
-GPL, the gSOAP public license, or Genivia's license for commercial use.
+GPL or the gSOAP public license.
 --------------------------------------------------------------------------------
 gSOAP public license.
 
@@ -42,6 +42,9 @@ Place, Suite 330, Boston, MA 02111-1307 USA
 
 Author contact information:
 engelen@genivia.com / engelen@acm.org
+
+This program is released under the GPL with the additional exemption that
+compiling, linking, and/or using OpenSSL is allowed.
 --------------------------------------------------------------------------------
 A commercial use license is available from Genivia, Inc., contact@genivia.com
 --------------------------------------------------------------------------------
@@ -49,3 +52,6 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 
 //gsoap SOAP-ENV schema namespace: http://www.w3.org/2003/05/soap-envelope
 //gsoap SOAP-ENC schema namespace: http://www.w3.org/2003/05/soap-encoding
+
+//gsoap SOAP-ENV schema namespace2: http://schemas.xmlsoap.org/soap/envelope/
+//gsoap SOAP-ENC schema namespace2: http://schemas.xmlsoap.org/soap/encoding/

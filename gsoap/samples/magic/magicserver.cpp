@@ -7,9 +7,10 @@
 	Alternatively, run from command line with arguments IP (which must be
 	the IP of the current machine you are using) and PORT to run this as a
 	stand-alone server on a port. For example:
-	$ magicserver.cgi 18081 &
+	$ magicserver.cgi 8080 &
 	To let the 'magic' client application talk to this service, change the
-	URL in magic.cpp into "http://localhost:18081"
+	URL in magic.cpp into "http://localhost:8080"
+	To show wsdl as stand-alone, use: http://localhost:8080/?wsdl
 
 	This example illustrates two alternative server implementations with
 	threads.  The first implementation recycles gSOAP resources but is
@@ -22,7 +23,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -51,7 +52,7 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 
 #include <unistd.h>
 #ifdef _POSIX_THREADS
-#include <pthread.h>    // use Pthreads
+#include <pthread.h>    // use Pthreads, NOTE: perhaps use gsoap/plugin/threads.h
 #endif
 
 #define BACKLOG (100)	// Max. request backlog
@@ -64,6 +65,7 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+int http_get(struct soap*);
 void *process_request(void*);
 
 int main(int argc, char **argv)
@@ -78,19 +80,24 @@ int main(int argc, char **argv)
   {
 #ifdef _POSIX_THREADS
     pthread_t tid;
+    void *arg;
 #endif
-    int m, s;
- // soap.accept_timeout = 60; // die if no requests are made within 1 minute
+    SOAP_SOCKET m, s;
     int port = atoi(argv[1]);
+    soap.recv_timeout = soap.send_timeout = 5; // max socket idle time (sec)
+    soap.transfer_timeout = 10; // max transfer time (sec)
+    // soap.accept_timeout = 60; // die if no requests are made within 1 minute
+    // register a HTTP GET handler
+    soap.fget = http_get;
     m = soap_bind(&soap, NULL, port, 100);
-    if (m < 0)
+    if (!soap_valid_socket(m))
     { soap_print_fault(&soap, stderr);
       exit(1);
     }
     fprintf(stderr, "Socket connection successful %d\n", m);
     for (int i = 1; ; i++)
     { s = soap_accept(&soap);
-      if (s < 0)
+      if (!soap_valid_socket(s))
       { if (soap.errnum)
           soap_print_fault(&soap, stderr);
 	else
@@ -99,9 +106,11 @@ int main(int argc, char **argv)
       }
       fprintf(stderr, "%d: accepted %d IP=%d.%d.%d.%d ... ", i, s, (int)(soap.ip>>24)&0xFF, (int)(soap.ip>>16)&0xFF, (int)(soap.ip>>8)&0xFF, (int)soap.ip&0xFF);
 #ifdef _POSIX_THREADS
-      pthread_create(&tid, NULL, (void*(*)(void*))process_request, (void*)soap_copy(&soap));
+      arg = (void*)soap_copy(&soap);
+      while (pthread_create(&tid, NULL, (void*(*)(void*))process_request, arg))
+	sleep(1);
 #else
-      soap_serve(&soap);	// process RPC skeletons
+      soap_serve(&soap);	// process request
       fprintf(stderr, "served\n");
       soap_destroy(&soap);
       soap_end(&soap);	// clean up 
@@ -259,4 +268,32 @@ vector& matrix::operator[](int i) const
 { if (!__ptr || i < 0 || i >= __size)
     fprintf(stderr, "Array index out of bounds\n");
   return __ptr[i];
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+//	A HTTP GET Handler to return WSDL (magic.wsdl)
+//
+////////////////////////////////////////////////////////////////////////////////
+
+int http_get(struct soap * soap)
+{ FILE *fd = NULL;
+  char *s = strchr(soap->path, '?');  // soap->path has the URL path of soap->endpoint
+  if (!s || strcmp(s, "?wsdl")) 
+    return SOAP_GET_METHOD; 
+  fd = fopen("magic.wsdl", "rb"); // open WSDL file to copy 
+  if (!fd) 
+    return 404; // return HTTP not found error 
+  soap->http_content = "text/xml"; // HTTP header with text/xml content 
+  soap_response(soap, SOAP_FILE); 
+  for (;;) 
+  { size_t r = fread(soap->tmpbuf, 1, sizeof(soap->tmpbuf), fd); 
+    if (!r) 
+      break; 
+    if (soap_send_raw(soap, soap->tmpbuf, r)) 
+      break; // can't send, but little we can do about that 
+  } 
+  fclose(fd); 
+  soap_end_send(soap); 
+  return SOAP_OK; 
 }

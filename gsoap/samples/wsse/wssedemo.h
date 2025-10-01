@@ -4,7 +4,7 @@
    2005-08-26 12:54:17 GMT
    Copyright (C) 2001-2005 Robert van Engelen, Genivia Inc. All Rights Reserved.
    This part of the software is released under one of the following licenses:
-   GPL or Genivia's license for commercial use.
+   GPL.
 */
 
 /* NOTE:
@@ -36,6 +36,8 @@
  *                                                                            *
 \******************************************************************************/
 
+// Choose WS-Security 1.1 or 1.0:
+// #import "wsse11.h"	// wsse = <http://docs.oasis-open.org/wss/oasis-wss-wssecurity-secext-1.1.xsd>
 #import "wsse.h"	// wsse = <http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd>
 
 /******************************************************************************\
@@ -106,7 +108,6 @@ struct SOAP_ENV__Header
 {
     mustUnderstand                       // must be understood by receiver
     _wsse__Security                     *wsse__Security                ;	///< TODO: Check element type (imported type)
-
 };
 
 /******************************************************************************\

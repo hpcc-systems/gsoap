@@ -7,7 +7,7 @@
 
 	Compile:
 	$ soapcpp2 -c -CSL rss.h
-	$ cc rss.c stdsoap2.c soapC.c
+	$ cc -o rss rss.c stdsoap2.c soapC.c
 
 	Usage (client):
 	$ rss [maxitems] URL
@@ -35,11 +35,14 @@
 	rss_date	the date of the item
 	rss_desc	the description of the item
 
+	To enable HTTPS, compile with:
+	$ cc -DWITH_OPENSSL -o rss rss.c stdsoap2.c soapC.c -lssl -lcrypto
+
 --------------------------------------------------------------------------------
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 

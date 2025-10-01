@@ -45,7 +45,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -123,7 +123,7 @@ struct dime_write_handle
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static char *TMPDIR = ".";
+static const char *TMPDIR = ".";
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -199,13 +199,15 @@ int main(int argc, char **argv)
       // copy soap environment and spawn thread (if Pthreads is installed)
       tsoap = soap_copy(&soap);
 #ifdef _POSIX_THREADS
-      pthread_create(&tid, NULL, (void*(*)(void*))process_request, (void*)tsoap);
+      while (pthread_create(&tid, NULL, (void*(*)(void*))process_request, (void*)tsoap))
+	sleep(1);
 #else
       process_request((void*)tsoap);
 #endif
     }
   }
-  // detach
+  soap_destroy(&soap);
+  soap_end(&soap);
   soap_done(&soap);
   return 0;
 }
@@ -289,7 +291,7 @@ int ns__getImage(struct soap *soap, char *name, ns__Data& image)
     return soap_sender_fault(soap, "Name required", NULL);
   if (getdata(soap, name, image))
     return soap_sender_fault(soap, "Access denied", NULL);
-  image.type = "image/jpeg";
+  image.type = (char*)"image/jpeg";
   image.options = soap_dime_option(soap, 0, name);
   return SOAP_OK;
 }
@@ -337,7 +339,7 @@ static int getdata(struct soap *soap, const char *name, ns__Data& data)
     fclose(fd);
     data.__size = i;
   }
-  data.type = ""; // specify non-NULL id or type to enable DIME
+  data.type = (char*)""; // specify non-NULL id or type to enable DIME
   data.options = soap_dime_option(soap, 0, name);
   return SOAP_OK;
 }
@@ -359,6 +361,7 @@ static void saveData(ns__Data& data, const char *name)
     len -= nwritten;
     buf += nwritten;
   }
+  fclose(fd);
 }
 
 static void sigpipe_handle(int x) { }

@@ -9,7 +9,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -42,14 +42,18 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-static char *ckserver = "http://www.cs.fsu.edu/~engelen/ck.cgi";
+#ifdef WITH_OPENSSL
+static const char *ckserver = "https://localhost:8080";
+#else
+static const char *ckserver = "http://localhost:8080";
+#endif
 
 // To access a stand-alone server on a port, use:
-// char ckserver[] = "IP:PORT";
-// char ckserver[] = "http://IP:PORT";	// include HTTP header in request
-// char ckserver[] = "http://linprog1.cs.fsu.edu:18081";
-// char ckserver[] = ""; // use I/O redirect
-// char ckserver[] = "http://"; // use I/O redirect (includes HTTP headers)
+// const char ckserver[] = "IP:PORT";
+// const char ckserver[] = "http://IP:PORT";	// include HTTP header in request
+// const char ckserver[] = "http://www.domain.com:8008";
+// const char ckserver[] = ""; // use I/O redirect
+// const char ckserver[] = "http://"; // use I/O redirect (includes HTTP headers)
 
 int main(int argc, char **argv)
 { char *r;
@@ -57,7 +61,22 @@ int main(int argc, char **argv)
   if (argc >= 2)
     ckserver = argv[1];
   soap_init(&soap);
-
+#ifdef WITH_OPENSSL
+  if (soap_ssl_client_context(&soap,
+    /* SOAP_SSL_NO_AUTHENTICATION, */ /* for encryption w/o authentication */
+    /* SOAP_SSL_DEFAULT | SOAP_SSL_SKIP_HOST_CHECK, */ /* if we don't want the host name checks since these will change from machine to machine */
+    SOAP_SSL_DEFAULT | SOAP_SSL_ALLOW_EXPIRED_CERTIFICATE, /* allow self-signed, expired, and certificates w/o CRL */
+    /* SOAP_SSL_DEFAULT, */ /* use SOAP_SSL_DEFAULT in production code */
+    NULL, 		/* keyfile (cert+key): required only when client must authenticate to server (see SSL docs to create this file) */
+    NULL, 		/* password to read the keyfile */
+    "cacert.pem",	/* optional cacert file to store trusted certificates, use cacerts.pem for all public certificates issued by common CAs */
+    NULL,		/* optional capath to directory with trusted certificates */
+    NULL		/* if randfile!=NULL: use a file with random data to seed randomness */ 
+  ))
+  { soap_print_fault(&soap, stderr);
+    exit(1);
+  }
+#endif
   // gSOAP's cookie handling is fully automatic at the client-side.
   // A database of cookies is kept and returned to the appropriate servers.
   // In this demo, the value (int) of the (invisible) cookie is returned as

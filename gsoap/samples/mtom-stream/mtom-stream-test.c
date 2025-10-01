@@ -6,10 +6,6 @@
 	Copyright (C) 2000-2006 Robert A. van Engelen, Genivia, Inc.
 	All Rights Reserved.
 
-	Usage (CGI server):
-
-		Install as CGI application, e.g. under cgi-bin
-
 	Usage (server):
 
 	mtom-stream-test 8085 &
@@ -40,7 +36,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -186,6 +182,9 @@ int run_server(int port)
   { fprintf(stderr, "Bind to port %d successful\n", port);
     /* Optional: let server time out after one hour */
     soap.accept_timeout = 3600;
+    /* IO timeouts (sec) */
+    soap.send_timeout = 10;
+    soap.recv_timeout = 10;
     /* Unix/Linux SIGPIPE, this is OS dependent:
     soap.accept_flags = SO_NOSIGPIPE;	// some systems like this
     soap.socket_flags = MSG_NOSIGNAL;	// others need this
@@ -250,6 +249,9 @@ int run_server(int port)
   { fprintf(stderr, "Bind to port %d successful\n", port);
     /* Optional: let server time out after one hour */
     soap.accept_timeout = 3600;
+    /* IO timeouts (sec) */
+    soap.send_timeout = 10;
+    soap.recv_timeout = 10;
     /* Unix/Linux SIGPIPE, this is OS dependent:
     soap.accept_flags = SO_NOSIGPIPE;	// some systems like this
     soap.socket_flags = MSG_NOSIGNAL;	// others need this
@@ -320,8 +322,8 @@ int run_client(int argc, char **argv)
   /* Connect timeout value (sec) (not supported by Linux) */
   soap.connect_timeout = 10;
   /* IO timeouts (sec) */
-  soap.send_timeout = 30;
-  soap.recv_timeout = 30;
+  soap.send_timeout = 10;
+  soap.recv_timeout = 10;
   /* Unix/Linux SIGPIPE, this is OS dependent:
   soap.accept_flags = SO_NOSIGPIPE;	// some systems like this
   soap.socket_flags = MSG_NOSIGNAL;	// others need this
@@ -364,9 +366,9 @@ int open_data(struct soap *soap, const char *file, struct x__Data *data)
     size = 0;
   }
   data->xop__Include.__size = size;
-  data->xmime4__contentType = file_type(file);
+  data->xmime5__contentType = file_type(file);
   data->xop__Include.id = NULL;
-  data->xop__Include.type = data->xmime4__contentType;
+  data->xop__Include.type = data->xmime5__contentType;
   data->xop__Include.options = NULL;
   return SOAP_OK;
 }
@@ -428,9 +430,9 @@ int m__PutData(struct soap *soap, struct x__DataSet *data, struct m__PutDataResp
   /* Set up array of keys to return a key for each data item saved */
   response->x__keys.__size = data->__size;
   response->x__keys.key = soap_malloc(soap, data->__size*sizeof(char**));
-  /* Each key is stored in the mime_server_handle object, set by the callbacks and accessible through the data __ptr */
+  /* Each key is stored in the mime_server_handle object, set by the callbacks and accessible through the data __ptr, where .type must be set as this indicates the presence of an attachment with a type */
   for (i = 0; i < data->__size; i++)
-  { if (data->item[i].xop__Include.__ptr)
+  { if (data->item[i].xop__Include.__ptr && data->item[i].xop__Include.type)
     { const char *key = ((struct mime_server_handle*)(data->item[i].xop__Include.__ptr))->key;
       const char *s;
       if (!key)
@@ -452,6 +454,7 @@ int m__PutData(struct soap *soap, struct x__DataSet *data, struct m__PutDataResp
 
 int m__GetData(struct soap *soap, struct x__Keys *keys, struct m__GetDataResponse *response)
 { int i;
+  char *file = soap_malloc(soap, strlen(TMPDIR) + 80);
   if ((soap->omode & SOAP_IO) == SOAP_IO_STORE)
     soap->omode = (soap->omode & ~SOAP_IO) | SOAP_IO_BUFFER;
   if (!keys)
@@ -460,7 +463,13 @@ int m__GetData(struct soap *soap, struct x__Keys *keys, struct m__GetDataRespons
   response->x__data.__size = keys->__size;
   response->x__data.item = soap_malloc(soap, keys->__size*sizeof(struct x__Data));
   for (i = 0; i < keys->__size; ++i)
-    open_data(soap, keys->key[i], &response->x__data.item[i]);
+  { strcpy(file, TMPDIR);
+    strcat(file, "/");
+    if (strncmp(keys->key[i], "data", 4))
+      strcat(file, "data");
+    strcat(file, keys->key[i]);
+    open_data(soap, file, &response->x__data.item[i]);
+  }
   return SOAP_OK;
 }
 

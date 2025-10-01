@@ -15,7 +15,8 @@
 	The xmas server:
 	$ soapcpp2 -c -S -n -pxmas xmas.h
 
-	cc -o xmas.cgi xmas.c stdsoap2.c envC.c xmasServerLib.c gmtClientLib.c calcClientLib.c
+        Compile and link together:
+	$ cc -o xmas.cgi xmas.c stdsoap2.c envC.c xmasServerLib.c gmtClientLib.c calcClientLib.c
 
 	The namespace table must include all proper namespace bindings.
 	When multiple namespace tables are used, then the namespace tables can
@@ -25,7 +26,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -60,11 +61,23 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 
 int main()
 {
-  struct soap soap;
-
-  soap_init(&soap);
-  soap_set_namespaces(&soap, xmas_namespaces);
-  return xmas_serve(&soap);
+  struct soap *soap = soap_new();
+  soap_set_namespaces(soap, xmas_namespaces);
+  SOAP_SOCKET m = soap_bind(soap, NULL, 8082, 1);
+  if (soap_valid_socket(m))
+  {
+    while (true)
+    {
+      SOAP_SOCKET s = soap_accept(soap);
+      if (!soap_valid_socket(s))
+        break;
+      soap_serve(soap);
+      soap_destroy(soap);
+      soap_end(soap);
+    }
+  }
+  soap_print_fault(soap, stderr);
+  soap_free(soap);
 }
 
 /******************************************************************************\
@@ -81,7 +94,7 @@ int __ns1__dtx(struct soap *soap, _XML x, struct _ns2__commingtotown *response)
   double sec, days;
 
   soap_set_namespaces(csoap, gmt_namespaces);
-  if (soap_call_t__gmt(csoap, "http://www.cs.fsu.edu/~engelen/gmtlitserver.cgi", NULL, &now))
+  if (soap_call_t__gmt(csoap, "http://localhost:8080", NULL, &now))
   {
     soap_end(csoap);
     soap_free(csoap);
@@ -108,7 +121,7 @@ int __ns1__dtx(struct soap *soap, _XML x, struct _ns2__commingtotown *response)
   sec = difftime(xmas, now);
   
   soap_set_namespaces(csoap, calc_namespaces);
-  if (soap_call_ns__add(csoap, NULL, NULL, sec, 86400, &days))
+  if (soap_call_ns__add(csoap, "http://localhost:8081", NULL, sec, 86400, &days))
   {
     soap_end(csoap);
     soap_free(csoap);
