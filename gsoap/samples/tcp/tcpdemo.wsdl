@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="tcpdemo"
+  targetNamespace="urn:tcpdemo"
+  xmlns:tns="urn:tcpdemo"
+  xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+  xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  xmlns:ns="urn:tcpdemo"
+  xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:HTTP="http://schemas.xmlsoap.org/wsdl/http/"
+  xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/"
+  xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/"
+  xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/"
+  xmlns="http://schemas.xmlsoap.org/wsdl/">
+
+<types>
+
+  <schema targetNamespace="urn:tcpdemo"
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:ns="urn:tcpdemo"
+    xmlns="http://www.w3.org/2001/XMLSchema"
+    elementFormDefault="unqualified"
+    attributeFormDefault="unqualified">
+    <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+    <complexType name="ClientData"><!-- ns__ClientData -->
+          <sequence>
+            <element name="client-message" type="xsd:string" minOccurs="0" maxOccurs="1"/><!-- ns__ClientData::client_message -->
+          </sequence>
+          <attribute name="id" type="xsd:int"/><!-- ns__ClientData::id -->
+    </complexType>
+    <!-- operation request element -->
+    <element name="echo">
+      <complexType>
+          <sequence>
+            <element name="param-1" type="ns:ClientData" minOccurs="1" maxOccurs="1"/><!-- ns__echo::_param_1 -->
+          </sequence>
+      </complexType>
+    </element>
+    <!-- operation response element and type -->
+    <element name="ServerData" type="ns:ServerData"/>
+    <complexType name="ServerData">
+          <sequence>
+            <element name="server-message" type="xsd:string" minOccurs="0" maxOccurs="1"/><!-- ns__ServerData::server_message -->
+          </sequence>
+          <attribute name="id" type="xsd:int"/><!-- ns__ServerData::id -->
+    </complexType>
+    <!-- operation request element -->
+    <element name="more">
+      <complexType>
+          <sequence>
+            <element name="param-1" type="ns:ClientData" minOccurs="1" maxOccurs="1"/><!-- ns__more::_param_1 -->
+          </sequence>
+      </complexType>
+    </element>
+    <!-- operation request element -->
+    <element name="data">
+      <complexType>
+          <sequence>
+            <element name="param-1" type="ns:ServerData" minOccurs="1" maxOccurs="1"/><!-- ns__data::_param_1 -->
+          </sequence>
+      </complexType>
+    </element>
+    <!-- operation request element -->
+    <element name="bye">
+      <complexType>
+          <sequence>
+          </sequence>
+      </complexType>
+    </element>
+  </schema>
+
+</types>
+
+<message name="echo">
+  <part name="Body" element="ns:echo"/><!-- ns__echo::ns__echo -->
+</message>
+
+<message name="ServerData">
+  <part name="Body" element="ns:ServerData"/><!-- ns__echo::_param_2 -->
+</message>
+
+<message name="more">
+  <part name="Body" element="ns:more"/><!-- ns__more::ns__more -->
+</message>
+
+<message name="data">
+  <part name="Body" element="ns:data"/><!-- ns__data::ns__data -->
+</message>
+
+<message name="bye">
+  <part name="Body" element="ns:bye"/><!-- ns__bye::ns__bye -->
+</message>
+
+<portType name="tcpdemoPortType">
+  <operation name="echo">
+    <documentation>Service definition of function ns__echo</documentation>
+    <input message="tns:echo"/>
+    <output message="tns:ServerData"/>
+  </operation>
+  <operation name="more">
+    <documentation>Service definition of function ns__more</documentation>
+    <input message="tns:more"/>
+  </operation>
+  <operation name="data">
+    <documentation>Service definition of function ns__data</documentation>
+    <input message="tns:data"/>
+  </operation>
+  <operation name="bye">
+    <documentation>Service definition of function ns__bye</documentation>
+    <input message="tns:bye"/>
+  </operation>
+</portType>
+
+<binding name="tcpdemo" type="tns:tcpdemoPortType">
+  <SOAP:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+  <operation name="echo">
+    <SOAP:operation soapAction=""/>
+    <input>
+          <SOAP:body use="literal" parts="Body"/>
+    </input>
+    <output>
+          <SOAP:body use="literal" parts="Body"/>
+    </output>
+  </operation>
+  <operation name="more">
+    <SOAP:operation soapAction=""/>
+    <input>
+          <SOAP:body use="literal" parts="Body"/>
+    </input>
+  </operation>
+  <operation name="data">
+    <SOAP:operation soapAction=""/>
+    <input>
+          <SOAP:body use="literal" parts="Body"/>
+    </input>
+  </operation>
+  <operation name="bye">
+    <SOAP:operation soapAction=""/>
+    <input>
+          <SOAP:body use="literal" parts="Body"/>
+    </input>
+  </operation>
+</binding>
+
+<service name="tcpdemo">
+  <documentation>gSOAP 2.8.139 generated service definition</documentation>
+  <port name="tcpdemo" binding="tns:tcpdemo">
+    <SOAP:address location="http://localhost:80"/>
+  </port>
+</service>
+
+</definitions>
