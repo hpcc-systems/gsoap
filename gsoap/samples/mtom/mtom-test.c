@@ -1,22 +1,22 @@
 /*
-	mtom-test.c
+        mtom-test.c
 
-	This application includes a MTOM test client and server. As a client
-	application, it fires four different base64 or MTOM attachments to the
-	server. As a server, it will respond to the messages by converting
-	base64 into MTOM attachments and vice versa.
+        This application includes a MTOM test client and server. As a client
+        application, it fires four different base64 or MTOM attachments to the
+        server. As a server, it will respond to the messages by converting
+        base64 into MTOM attachments and vice versa.
 
-	Usage (server):
-	$ mtom <port>
+        Usage (server):
+        $ mtom <port>
 
-	Usage (client):
-	$ mtom http://localhost:<port> "<message1>" "<message2>" "<message3>" ...
+        Usage (client):
+        $ mtom http://localhost:<port> "<message1>" "<message2>" "<message3>" ...
 
 --------------------------------------------------------------------------------
 gSOAP XML Web services tools
 Copyright (C) 2000-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -57,7 +57,8 @@ int main(int argc, char **argv)
 
 int cgi_serve()
 { /* CGI-style: serve request from stdin */
-  return soap_serve(soap_new1(SOAP_ENC_MTOM)); /* enable MTOM XOP attachments */
+  /* enable MTOM XOP attachments (and XML indent) */
+  return soap_serve(soap_new1(SOAP_XML_INDENT | SOAP_ENC_MTOM));
 }
 
 int run_serve(int port)
@@ -74,9 +75,8 @@ int run_serve(int port)
       { if (soap->errnum)
           soap_print_fault(soap, stderr);
         else
-        { fprintf(stderr, "Server timed out\n");
-          break;
-        }
+          fprintf(stderr, "Server timed out\n");
+        break;
       }
       fprintf(stderr, "Accepting socket %d connection from IP %d.%d.%d.%d... ", sock, (int)(soap->ip>>24)&0xFF, (int)(soap->ip>>16)&0xFF, (int)(soap->ip>>8)&0xFF, (int)soap->ip&0xFF);
       if (soap_serve(soap))
@@ -87,8 +87,7 @@ int run_serve(int port)
     } 
   }
   ret = soap->error;
-  soap_done(soap);
-  free(soap);
+  soap_free(soap); /* done and free */
   return ret;
 }
 
@@ -107,7 +106,8 @@ int run_tests(int argc, char **argv)
   data.choice.base64.__ptr = (unsigned char*)argv[2];
   data.choice.base64.__size = (int)strlen(argv[2]) + 1;
   if (soap_call_m__EchoTestSingle(soap, argv[1], NULL, &data, &single))
-    soap_print_fault(soap, stderr);
+  { soap_print_fault(soap, stderr);
+  }
   else
   { if (!single.x__Data || single.x__Data->__union != SOAP_UNION_x__data_xop__Include || !single.x__Data->choice.xop__Include.__ptr || single.x__Data->choice.xop__Include.__size != data.choice.base64.__size || strcmp((char*)single.x__Data->choice.xop__Include.__ptr, (char*)data.choice.base64.__ptr))
       fprintf(stderr, "EchoTestSingle 1: data transcription error\n");
@@ -120,9 +120,14 @@ int run_tests(int argc, char **argv)
     data.choice.xop__Include.id = NULL;
     data.choice.xop__Include.type = "text/xml";
     data.choice.xop__Include.options = NULL;
-    data.xmime4__contentType = "text/xml";
+    data.xmime5__contentType = "text/xml";
+#ifdef WITH_NOIDREF
+    /* compiling with WITH_NOIDREF removes auto-detection of attachments */
+    soap_set_mime(soap, NULL, NULL); /* so we explicitly set MIME attachments */
+#endif
     if (soap_call_m__EchoTestSingle(soap, argv[1], NULL, &data, &single))
-      soap_print_fault(soap, stderr);
+    { soap_print_fault(soap, stderr);
+    }
     else
     { if (!single.x__Data
        || single.x__Data->__union != SOAP_UNION_x__data_base64
@@ -140,21 +145,21 @@ int run_tests(int argc, char **argv)
           wrap.Data[i].__union = SOAP_UNION_x__data_base64;
           wrap.Data[i].choice.base64.__ptr = (unsigned char*)argv[i + 2];
           wrap.Data[i].choice.base64.__size = (int)strlen(argv[i + 2]) + 1;
-          wrap.Data[i].xmime4__contentType = "text/xml";
+          wrap.Data[i].xmime5__contentType = "text/xml";
         }
         if (soap_call_m__EchoTestMultiple(soap, argv[1], NULL, &wrap, &multiple))
           soap_print_fault(soap, stderr);
         else
         { int okay = 1;
           if (!multiple.x__EchoTest
-	   || multiple.x__EchoTest->__size != wrap.__size)
+           || multiple.x__EchoTest->__size != wrap.__size)
             okay = 0;
           else
           { for (i = 0; i < multiple.x__EchoTest->__size; ++i)
               if (multiple.x__EchoTest->Data[i].__union != SOAP_UNION_x__data_xop__Include
-	       || !multiple.x__EchoTest->Data[i].choice.xop__Include.__ptr
-	       || multiple.x__EchoTest->Data[i].choice.xop__Include.__size != wrap.Data[i].choice.base64.__size
-	       || strcmp((char*)multiple.x__EchoTest->Data[i].choice.xop__Include.__ptr, (char*)wrap.Data[i].choice.base64.__ptr))
+               || !multiple.x__EchoTest->Data[i].choice.xop__Include.__ptr
+               || multiple.x__EchoTest->Data[i].choice.xop__Include.__size != wrap.Data[i].choice.base64.__size
+               || strcmp((char*)multiple.x__EchoTest->Data[i].choice.xop__Include.__ptr, (char*)wrap.Data[i].choice.base64.__ptr))
                 okay = 0;
           }
           if (!okay)
@@ -170,20 +175,20 @@ int run_tests(int argc, char **argv)
               wrap.Data[i].choice.xop__Include.id = NULL;
               wrap.Data[i].choice.xop__Include.type = "text/xml";
               wrap.Data[i].choice.xop__Include.options = NULL;
-              wrap.Data[i].xmime4__contentType = "text/xml";
+              wrap.Data[i].xmime5__contentType = "text/xml";
             }
             if (soap_call_m__EchoTestMultiple(soap, argv[1], NULL, &wrap, &multiple))
               soap_print_fault(soap, stderr);
             else
             { int okay = 1;
               if (!multiple.x__EchoTest
-	       || multiple.x__EchoTest->__size != wrap.__size)
+               || multiple.x__EchoTest->__size != wrap.__size)
                 okay = 0;
               else
               { for (i = 0; i < multiple.x__EchoTest->__size; ++i)
                   if (multiple.x__EchoTest->Data[i].__union != SOAP_UNION_x__data_base64
-		   || !multiple.x__EchoTest->Data[i].choice.base64.__ptr
-		   || multiple.x__EchoTest->Data[i].choice.base64.__size != wrap.Data[i].choice.xop__Include.__size || strcmp((char*)multiple.x__EchoTest->Data[i].choice.base64.__ptr, (char*)wrap.Data[i].choice.xop__Include.__ptr))
+                   || !multiple.x__EchoTest->Data[i].choice.base64.__ptr
+                   || multiple.x__EchoTest->Data[i].choice.base64.__size != wrap.Data[i].choice.xop__Include.__size || strcmp((char*)multiple.x__EchoTest->Data[i].choice.base64.__ptr, (char*)wrap.Data[i].choice.xop__Include.__ptr))
                     okay = 0;
               }
               if (!okay)
@@ -221,17 +226,23 @@ int m__EchoTestSingle(struct soap *soap, struct x__DataType *data, struct m__Ech
       response->x__Data->__union = SOAP_UNION_x__data_base64;
       response->x__Data->choice.base64.__ptr = data->choice.xop__Include.__ptr;
       response->x__Data->choice.base64.__size = data->choice.xop__Include.__size;
-      response->x__Data->xmime4__contentType = data->choice.xop__Include.type;
+      response->x__Data->xmime5__contentType = data->choice.xop__Include.type;
       break;
     case SOAP_UNION_x__data_base64:
+      /* set MTOM/MIME attachments, if context is not already initialized with SOAP_ENC_MTOM */
+      soap_set_mode(soap, SOAP_ENC_MTOM | SOAP_ENC_MIME);
       /* convert base64Binary to MTOM attachment */
       response->x__Data->__union = SOAP_UNION_x__data_xop__Include;
       response->x__Data->choice.xop__Include.__ptr = data->choice.base64.__ptr;
       response->x__Data->choice.xop__Include.__size = data->choice.base64.__size;
       response->x__Data->choice.xop__Include.id = NULL;
-      response->x__Data->choice.xop__Include.type = data->xmime4__contentType;
+      response->x__Data->choice.xop__Include.type = data->xmime5__contentType;
       response->x__Data->choice.xop__Include.options = NULL;
-      response->x__Data->xmime4__contentType = data->xmime4__contentType;
+      response->x__Data->xmime5__contentType = data->xmime5__contentType;
+#ifdef WITH_NOIDREF
+      /* compiling with WITH_NOIDREF removes auto-detection of attachments */
+      soap_set_mime(soap, NULL, NULL); /* so we explicitly set MIME attachments */
+#endif
       break;
     default:
       return soap_sender_fault(soap, "Wrong data format", NULL);
@@ -259,17 +270,23 @@ int m__EchoTestMultiple(struct soap *soap, struct x__WrapperType *x__EchoTest, s
         response->x__EchoTest->Data[i].__union = SOAP_UNION_x__data_base64;
         response->x__EchoTest->Data[i].choice.base64.__ptr = x__EchoTest->Data[i].choice.xop__Include.__ptr;
         response->x__EchoTest->Data[i].choice.base64.__size = x__EchoTest->Data[i].choice.xop__Include.__size;
-        response->x__EchoTest->Data[i].xmime4__contentType = x__EchoTest->Data[i].choice.xop__Include.type;
+        response->x__EchoTest->Data[i].xmime5__contentType = x__EchoTest->Data[i].choice.xop__Include.type;
         break;
       case SOAP_UNION_x__data_base64:
+        /* set MTOM/MIME attachments, if context is not already initialized with SOAP_ENC_MTOM */
+        soap_set_mode(soap, SOAP_ENC_MTOM | SOAP_ENC_MIME); /* set MTOM/MIME attachments */
         /* convert base64Binary to MTOM attachment */
         response->x__EchoTest->Data[i].__union = SOAP_UNION_x__data_xop__Include;
         response->x__EchoTest->Data[i].choice.xop__Include.__ptr = x__EchoTest->Data[i].choice.base64.__ptr;
         response->x__EchoTest->Data[i].choice.xop__Include.__size = x__EchoTest->Data[i].choice.base64.__size;
         response->x__EchoTest->Data[i].choice.xop__Include.id = NULL;
-        response->x__EchoTest->Data[i].choice.xop__Include.type = x__EchoTest->Data[i].xmime4__contentType;
+        response->x__EchoTest->Data[i].choice.xop__Include.type = x__EchoTest->Data[i].xmime5__contentType;
         response->x__EchoTest->Data[i].choice.xop__Include.options = NULL;
-        response->x__EchoTest->Data[i].xmime4__contentType = x__EchoTest->Data[i].xmime4__contentType;
+        response->x__EchoTest->Data[i].xmime5__contentType = x__EchoTest->Data[i].xmime5__contentType;
+#ifdef WITH_NOIDREF
+        /* compiling with WITH_NOIDREF removes auto-detection of attachments */
+        soap_set_mime(soap, NULL, NULL); /* so we explicitly set MIME attachments */
+#endif
         break;
       default:
         return soap_sender_fault(soap, "Wrong data format", NULL);

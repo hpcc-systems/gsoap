@@ -3,11 +3,14 @@
 
 	LU factorization Web service client.
 
+        $ ./luserver 8080 &
+        $ ./luclient
+
 --------------------------------------------------------------------------------
 gSOAP XML Web services tools
-Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
+Copyright (C) 2001-2024, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -32,9 +35,9 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 */
 
 #include "soapH.h"
-#include <iostream.h>
+#include <iostream>
 
-const char luserver[] = "http://websrv.cs.fsu.edu/~engelen/luserver.cgi";
+const char luserver[] = "http://localhost:8080";
 
 int main(int argc, char **argv)
 { struct soap *soap = soap_new();
@@ -51,14 +54,14 @@ int main(int argc, char **argv)
   a[3].resize(2,3); // 2-element vector indexed from 2 to 3
   a[3][2] = 1;
   a[3][3] = 2;
-  cout << "* Demonstration example *" << endl;
-  cout << "Matrix:" << endl;
+  std::cout << "* Demonstration example *" << std::endl;
+  std::cout << "Matrix:" << std::endl;
   a.print();
   vector b(soap, 3);
   b[1] = 1;
   b[2] = 2;
   b[3] = 3;
-  cout << "Vector:" << endl;
+  std::cout << "Vector:" << std::endl;
   b.print();
   vector x(soap);
   if (argc < 2)
@@ -71,7 +74,7 @@ int main(int argc, char **argv)
     soap_print_fault_location(soap, stderr);
   }
   else
-  { cout << "Solution vector from service:" << endl;
+  { std::cout << "Solution vector from service:" << std::endl;
     x.print();
   }
   matrix a1(soap);
@@ -80,13 +83,12 @@ int main(int argc, char **argv)
     soap_print_fault_location(soap, stderr);
   }
   else
-  { cout << "Inverse matrix matrix from service:" << endl;
+  { std::cout << "Inverse matrix matrix from service:" << std::endl;
     a1.print();
   }
   soap_destroy(soap);
   soap_end(soap);
-  soap_done(soap);
-  free(soap);
+  soap_free(soap);
   return 0;
 }
 

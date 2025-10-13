@@ -1,12 +1,15 @@
 /*
+        httppost.h
 
-httppost.h
+        gSOAP HTTP POST plugin for non-SOAP payloads.
 
-gSOAP HTTP POST plugin for non-SOAP payloads.
-Note: multipart/related and multipart/form-data are already handled in gSOAP.
+        See httppost.c for instructions.
+
+        Revisions:
+        register multiple POST content handlers, each for a content type
 
 gSOAP XML Web services tools
-Copyright (C) 2004-2005, Robert van Engelen, Genivia, Inc. All Rights Reserved.
+Copyright (C) 2000-2018, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 
 --------------------------------------------------------------------------------
 gSOAP public license.
@@ -54,16 +57,42 @@ compiling, linking, and/or using OpenSSL is allowed.
 extern "C" {
 #endif
 
-#define HTTP_POST_ID "HTTP-POST-1.0" /* plugin identification */
+#define HTTP_POST_ID "SOAP-HTTP-POST/2.2" /* plugin identification */
 
 extern const char http_post_id[];
 
-/* This is the local plugin data shared among all copies of the soap struct: */
-struct http_post_data
-{ int (*fparsehdr)(struct soap*, const char*, const char*); /* to save and call the internal HTTP header parser */
+typedef int (*http_handler_t)(struct soap*);
+
+struct http_post_handlers
+{
+  const char *type;
+  http_handler_t handler;
 };
 
+/* This is the local plugin data shared among all copies of the soap struct: */
+struct http_post_data
+{
+  int (*fparsehdr)(struct soap*, const char*, const char*); /* to save and call the internal HTTP header parser */
+  int (*fput)(struct soap*); /* to save */
+  int (*fpatch)(struct soap*); /* to save */
+  int (*fdel)(struct soap*); /* to save */
+  struct http_post_handlers *handlers; /* the server-side POST content type handlers */
+};
+
+/* the http post plugin, note: argument should be a table of type-handler pairs */
 int http_post(struct soap*, struct soap_plugin*, void*);
+
+/* deprecated: use soap_POST instead */
+int soap_post_connect(struct soap*, const char *endpoint, const char *action, const char *type);
+
+/* deprecated: use soap_PUT instead */
+int soap_put_connect(struct soap*, const char *endpoint, const char *action, const char *type);
+
+/* deprecated: use soap_DELETE instead */
+int soap_delete_connect(struct soap*, const char *endpoint);
+
+/* deprecated: use soap_get_http_body instead */
+int soap_http_body(struct soap*, char **buf, size_t *len);
 
 #ifdef __cplusplus
 }

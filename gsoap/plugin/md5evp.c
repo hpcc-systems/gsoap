@@ -1,13 +1,12 @@
 /*
+	md5evp.c
 
-md5evp.c
-
-gSOAP HTTP Content-MD5 digest EVP handler for httpmd5 plugin
+	gSOAP HTTP Content-MD5 digest EVP handler for httpmd5 plugin
 
 gSOAP XML Web services tools
 Copyright (C) 2000-2005, Robert van Engelen, Genivia Inc., All Rights Reserved.
 This part of the software is released under one of the following licenses:
-GPL, the gSOAP public license, or Genivia's license for commercial use.
+GPL or the gSOAP public license.
 --------------------------------------------------------------------------------
 gSOAP public license.
 
@@ -59,36 +58,47 @@ int md5_handler(struct soap *soap, void **context, enum md5_action action, char 
   unsigned int size;
   switch (action)
   { case MD5_INIT:
-#ifdef WITH_OPENSSL
-      OpenSSL_add_all_digests();
-#endif
+      soap_ssl_init();
       if (!*context)
-      { *context = (void*)SOAP_MALLOC(soap, sizeof(EVP_MD_CTX));
+      {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+        *context = (void*)SOAP_MALLOC(soap, sizeof(EVP_MD_CTX));
+        EVP_MD_CTX_init((EVP_MD_CTX*)*context);
+#else
+        *context = EVP_MD_CTX_new();
+#endif
         EVP_MD_CTX_init((EVP_MD_CTX*)*context);
       }
       ctx = (EVP_MD_CTX*)*context;
       DBGLOG(TEST, SOAP_MESSAGE(fdebug, "-- MD5 Init %p\n", ctx));
-      EVP_DigestInit(ctx, EVP_md5());
+      EVP_DigestInit_ex(ctx, EVP_md5(), NULL);
       break;
     case MD5_UPDATE:
       ctx = (EVP_MD_CTX*)*context;
-      DBGLOG(TEST, SOAP_MESSAGE(fdebug, "-- MD5 Update %p --\n", ctx));
+      DBGLOG(TEST, SOAP_MESSAGE(fdebug, "-- MD5 Update %p (%lu) --\n", ctx, (unsigned long)len));
       DBGMSG(TEST, buf, len);
       DBGLOG(TEST, SOAP_MESSAGE(fdebug, "\n--"));
       EVP_DigestUpdate(ctx, (const void*)buf, (unsigned int)len);
       break;
     case MD5_FINAL:
       ctx = (EVP_MD_CTX*)*context;
+      EVP_DigestFinal_ex(ctx, (unsigned char*)hash, &size);
       DBGLOG(TEST, SOAP_MESSAGE(fdebug, "-- MD5 Final %p --\n", ctx));
-      EVP_DigestFinal(ctx, (unsigned char*)hash, &size);
-      memcpy(buf, hash, 16);
+      DBGHEX(TEST, hash, size);
+      DBGLOG(TEST, SOAP_MESSAGE(fdebug, "\n--"));
+      (void)soap_memcpy((void*)buf, 16, (const void*)hash, 16);
       break;
     case MD5_DELETE:
       ctx = (EVP_MD_CTX*)*context;
       DBGLOG(TEST, SOAP_MESSAGE(fdebug, "-- MD5 Delete %p --\n", ctx));
       if (ctx)
-      { EVP_MD_CTX_cleanup(ctx);
+      {
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+        EVP_MD_CTX_cleanup(ctx);
         SOAP_FREE(soap, ctx);
+#else
+        EVP_MD_CTX_free(ctx);
+#endif
       }
       *context = NULL;
   }

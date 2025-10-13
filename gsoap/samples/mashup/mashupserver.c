@@ -10,7 +10,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -39,7 +39,30 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 
 int main(int argc, char **argv)
 {
-  return soap_serve(soap_new());
+  struct soap *soap = soap_new();
+  soap_set_namespaces(soap, namespaces);
+  if (argc < 2)
+  {
+    soap_serve(soap); // CGI service
+  }
+  else
+  {
+    SOAP_SOCKET m = soap_bind(soap, NULL, atoi(argv[1]), 1);
+    if (soap_valid_socket(m))
+    {
+      while (1)
+      {
+        SOAP_SOCKET s = soap_accept(soap);
+        if (!soap_valid_socket(s))
+          break;
+        soap_serve(soap);
+        soap_destroy(soap);
+        soap_end(soap);
+      }
+    }
+    soap_print_fault(soap, stderr);
+    soap_free(soap);
+  }
 }
 
 /******************************************************************************\
@@ -53,11 +76,11 @@ int __ns5__dtx(struct soap *soap, _XML x, struct _ns3__commingtotown *response)
   struct soap *csoap = soap_copy(soap);
   struct _ns1__gmt gmt;
   struct _ns1__gmtResponse gmtResponse;
-  struct tm tm;
-  time_t *now, xmas;
+  struct tm tm, ptm;
+  time_t now, xmas;
   double sec, days;
 
-  if (soap_call___ns4__gmt(csoap, "http://www.cs.fsu.edu/~engelen/gmtlitserver.cgi", NULL, &gmt, &gmtResponse))
+  if (soap_call___ns4__gmt(csoap, "http://localhost:8080", NULL, &gmt, &gmtResponse))
   {
     soap_end(csoap);
     soap_free(csoap);
@@ -66,29 +89,22 @@ int __ns5__dtx(struct soap *soap, _XML x, struct _ns3__commingtotown *response)
 
   now = gmtResponse.param_1;
 
-  if (!now)
-    return soap_receiver_fault(soap, "Could not retrieve current time", NULL);
-
-  tm.tm_sec = 0;
-  tm.tm_min = 0;
-  tm.tm_hour = 0;
+  memset(&tm, 0, sizeof(struct tm));
   tm.tm_mday = 25;
   tm.tm_mon = 11;
-  tm.tm_year = gmtime(now)->tm_year; /* this year */
-  tm.tm_isdst = 0;
-  tm.tm_zone = NULL;
+  tm.tm_year = gmtime(&now)->tm_year; /* this year */
 
   xmas = soap_timegm(&tm);
 
-  if (xmas < *now)
+  if (xmas < now)
   {
     tm.tm_year++; /* xmas just passed, go to next year */
     xmas = soap_timegm(&tm);
   }
 
-  sec = difftime(xmas, *now);
+  sec = difftime(xmas, now);
   
-  if (soap_call_ns2__div(csoap, NULL, NULL, sec, 86400, &days))
+  if (soap_call_ns2__div(csoap, "http://localhost:8081", NULL, sec, 86400, &days))
   {
     soap_end(csoap);
     soap_free(csoap);

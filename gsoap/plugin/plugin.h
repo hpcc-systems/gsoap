@@ -8,14 +8,14 @@
 
 #include "stdsoap2.h"
 
-#define PLUGIN_ID "PLUGIN-1.0" /* plugin identification */
+#define PLUGIN_ID "SOAP-PLUGIN/1.0" /* plugin identification */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct plugin_data
-{ int (*fsend)(struct soap*, const char*, size_t); /* example: to save and use send callback */
+struct plugin_data {
+  int (*fsend)(struct soap*, const char*, size_t); /* example: to save and use send callback */
   size_t (*frecv)(struct soap*, char*, size_t); /* example: to save and use recv callback */
 };
 

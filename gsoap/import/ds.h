@@ -1,12 +1,14 @@
 /*
+	ds.h
 
-ds.h
+	Generated with:
+	wsdl2h -cuxy -o ds.h -t WS/WS-typemap.dat WS/ds.xsd
 
-Generated with:
-wsdl2h -cuxy -o ds.h -t WS/WS-typemap.dat WS/ds.xsd
+        This file imports:
+        - c14n.h
 
-- Removed //gsoapopt
-- Added //gsoap ds    schema import: http://www.w3.org/2000/09/xmldsig#
+	- Removed //gsoapopt
+	- Added //gsoap ds    schema import: http://www.w3.org/2000/09/xmldsig#
 
 */
 
@@ -30,6 +32,7 @@ wsdl2h -cuxy -o ds.h -t WS/WS-typemap.dat WS/ds.xsd
  *                                                                            *
 \******************************************************************************/
 
+#define SOAP_NAMESPACE_OF_ds	"http://www.w3.org/2000/09/xmldsig#"
 //gsoap ds    schema import:	http://www.w3.org/2000/09/xmldsig#
 //gsoap ds    schema elementForm:	qualified
 //gsoap ds    schema attributeForm:	unqualified
@@ -41,14 +44,14 @@ wsdl2h -cuxy -o ds.h -t WS/WS-typemap.dat WS/ds.xsd
 \******************************************************************************/
 
 
-
 /// Imported complexType "http://www.w3.org/2000/09/xmldsig#":SignatureType from typemap WS/WS-typemap.dat.
+typedef char *_ds__SignatureValue;
 typedef struct ds__SignatureType
 {	struct ds__SignedInfoType*		SignedInfo;
-	char*					SignatureValue;
+	_ds__SignatureValue			SignatureValue;
 	struct ds__KeyInfoType*			KeyInfo;
 	@char*					Id;
-} ds__SignatureType;
+} ds__SignatureType, _ds__Signature;
 
 /// Imported complexType "http://www.w3.org/2000/09/xmldsig#":SignatureValueType from typemap WS/WS-typemap.dat.
 /// complexType definition intentionally left blank.
@@ -74,20 +77,21 @@ typedef struct ds__TransformType
 {	_c14n__InclusiveNamespaces*             c14n__InclusiveNamespaces;
 	_XML					__any;
 	@char*					Algorithm;
-} ds__TransformType;
+} ds__TransformType, _ds__Transform;
 
 /// Typedef synonym for struct ds__DigestMethodType.
 typedef struct ds__DigestMethodType ds__DigestMethodType;
 
 /// Imported complexType "http://www.w3.org/2000/09/xmldsig#":KeyInfoType from typemap WS/WS-typemap.dat.
-typedef struct ds__KeyInfoType
+mutable struct ds__KeyInfoType
 {	char*					KeyName;
 	struct ds__KeyValueType*		KeyValue;
 	struct ds__RetrievalMethodType*		RetrievalMethod;
 	struct ds__X509DataType*		X509Data;
 	struct _wsse__SecurityTokenReference*	wsse__SecurityTokenReference;
 	@char*					Id;
-} ds__KeyInfoType;
+};
+typedef struct ds__KeyInfoType ds__KeyInfoType, _ds__KeyInfo;
 
 /// Typedef synonym for struct ds__KeyValueType.
 typedef struct ds__KeyValueType ds__KeyValueType;
@@ -217,9 +221,9 @@ struct ds__KeyValueType
 {
 /// CHOICE OF ELEMENTS <choice>
 /// Element reference "http://www.w3.org/2000/09/xmldsig#":DSAKeyValue.
-    struct ds__DSAKeyValueType*          DSAKeyValue                    1;	///< Required element.
+    struct ds__DSAKeyValueType*          DSAKeyValue                    0;	///< Required element.
 /// Element reference "http://www.w3.org/2000/09/xmldsig#":RSAKeyValue.
-    struct ds__RSAKeyValueType*          RSAKeyValue                    1;	///< Required element.
+    struct ds__RSAKeyValueType*          RSAKeyValue                    0;	///< Required element.
 /// TODO: <any namespace="##other">
 ///       Schema extensibility is user-definable.
 ///       Consult the protocol documentation to change and/or insert declarations.
@@ -244,15 +248,15 @@ struct ds__X509DataType
 {
 /// CHOICE OF ELEMENTS <choice>
 /// Element X509IssuerSerial of type "http://www.w3.org/2000/09/xmldsig#":X509IssuerSerialType.
-    struct ds__X509IssuerSerialType*     X509IssuerSerial               1;	///< Required element.
+    struct ds__X509IssuerSerialType*     X509IssuerSerial               0;	///< Required element.
 /// Element X509SKI of type xs:base64Binary.
-    char* /*base64*/                     X509SKI                        1;	///< Required element.
+    char* /*base64*/                     X509SKI                        0;	///< Required element.
 /// Element X509SubjectName of type xs:string.
-    char*                                X509SubjectName                1;	///< Required element.
+    char*                                X509SubjectName                0;	///< Required element.
 /// Element X509Certificate of type xs:base64Binary.
-    char* /*base64*/                     X509Certificate                1;	///< Required element.
+    char* /*base64*/                     X509Certificate                0;	///< Required element.
 /// Element X509CRL of type xs:base64Binary.
-    char* /*base64*/                     X509CRL                        1;	///< Required element.
+    char* /*base64*/                     X509CRL                        0;	///< Required element.
 /// TODO: <any namespace="##other">
 ///       Schema extensibility is user-definable.
 ///       Consult the protocol documentation to change and/or insert declarations.
@@ -267,7 +271,7 @@ struct ds__X509IssuerSerialType
 /// Element X509IssuerName of type xs:string.
     char*                                X509IssuerName                 1;	///< Required element.
 /// Element X509SerialNumber of type xs:integer.
-    int                                  X509SerialNumber               1;	///< Required element.
+    char*                                X509SerialNumber               1;	///< Required element.
 };
 
 /// "http://www.w3.org/2000/09/xmldsig#":DSAKeyValueType is a complexType.

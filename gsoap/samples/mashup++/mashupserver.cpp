@@ -10,7 +10,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -35,7 +35,7 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 */
 
 #include "soapcalcProxy.h"
-#include "soapServiceProxy.h"
+#include "soapgmtProxy.h"
 #include "soapmashupService.h"
 #include "mashup.nsmap"
 
@@ -43,7 +43,10 @@ int main(int argc, char **argv)
 {
   mashupService service;
 
-  return service.serve();
+  if (argc < 2)
+    return service.serve();
+  else
+    return service.run(8082, 1);
 }
 
 /******************************************************************************\
@@ -52,50 +55,44 @@ int main(int argc, char **argv)
  *
 \******************************************************************************/
 
-int mashupService::dtx(_XML x, struct _ns3__commingtotown *response)
+int mashupService::dtx(_XML x, _ns3__commingtotown &response)
 {
-  ServiceProxy Time;
-  Time.soap_endpoint = "http://www.cs.fsu.edu/~engelen/gmtlitserver.cgi";
+  (void)x; /* input param that is always empty is simply ignored */
+
+  gmtProxy Time("http://localhost:8080");
 
   _ns1__gmt gmt;
   _ns1__gmtResponse gmtResponse;
 
-  if (Time.gmt(&gmt, &gmtResponse))
+  if (Time.gmt(&gmt, gmtResponse))
     return soap_receiverfault("Cannot connect to GMT server", NULL);
 
-  time_t *now = gmtResponse.param_1;
-
-  if (!now)
-    return soap_receiverfault("Could not retrieve current time", NULL);
+  time_t now = gmtResponse.param_1;
 
   struct tm tm;
 
-  tm.tm_sec = 0;
-  tm.tm_min = 0;
-  tm.tm_hour = 0;
+  memset(&tm, 0, sizeof(struct tm));
   tm.tm_mday = 25;
   tm.tm_mon = 11;
-  tm.tm_year = gmtime(now)->tm_year; // this year
-  tm.tm_isdst = 0;
-  tm.tm_zone = NULL;
+  tm.tm_year = gmtime(&now)->tm_year; // this year
 
   time_t xmas = soap_timegm(&tm);
 
-  if (xmas < *now)
+  if (xmas < now)
   {
     tm.tm_year++; // xmas just passed, go to next year
     xmas = soap_timegm(&tm);
   }
 
-  double sec = difftime(xmas, *now);
+  double sec = difftime(xmas, now);
   
-  calcProxy Calc;
+  calcProxy Calc("http://localhost:8081");
   double days;
 
   if (Calc.div(sec, 86400.0, days))
     return soap_receiverfault("Cannot connect to calc server", NULL);
 
-  response->days = (int)days;
+  response.days = (int)days;
 
   soap_delegate_deletion(&Time, this); // Time data to be deleted by 'this'
   soap_delegate_deletion(&Calc, this); // Calc data to be deleted by 'this'

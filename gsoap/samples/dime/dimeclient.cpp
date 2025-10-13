@@ -44,7 +44,7 @@
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -123,8 +123,9 @@ int main(int argc, char **argv)
   // connect timeout value (not supported by Linux)
   soap.connect_timeout = 10;
   // IO timeouts
-  soap.send_timeout = 30;
-  soap.recv_timeout = 30;
+  soap.send_timeout = 5;
+  soap.recv_timeout = 5;
+  soap.transfer_timeout = 30;
   // Unix/Linux SIGPIPE, this is OS dependent:
   // soap.accept_flags = SO_NOSIGPIPE;	// some systems like this
   // soap.socket_flags = MSG_NOSIGNAL;	// others need this
@@ -132,7 +133,7 @@ int main(int argc, char **argv)
   if (argc < 3)
   { char *name;
     if (argc < 2)
-      name = "image.jpg";
+      name = (char*)"image.jpg";
     else
       name = argv[1];
     getImage(&soap, name);
@@ -172,7 +173,7 @@ static void putData(struct soap *soap, int argc, char **argv)
   { data[i - 2].__ptr = (unsigned char*)argv[i];
     // MUST set id or type to enable DIME
     // zero size indicates streaming DIME (this requires HTTP chunking)
-    data[i - 2].type = "";
+    data[i - 2].type = (char*)"";
   }
   if (soap_call_ns__putData(soap, endpoint, NULL, &data, &names))
     soap_print_fault(soap, stderr);
@@ -249,6 +250,7 @@ static void saveData(ns__Data& data, const char *name)
 
 static void *dime_read_open(struct soap *soap, void *handle, const char *id, const char *type, const char *options)
 { FILE *fd;
+  (void)soap; (void)id; (void)type; (void)options;
   // we should return NULL without setting soap->error if we don't want to use the streaming callback for this DIME attachment. The handle contains the non-NULL __ptr field value which should have been set in the application.
   // return value of this function will be passed on to the fdimeread and fdimereadclose callbacks. The return value will not affect the __ptr field.
   fd = fopen((char*)handle, "rb");
@@ -256,18 +258,21 @@ static void *dime_read_open(struct soap *soap, void *handle, const char *id, con
 }
 
 static void dime_read_close(struct soap *soap, void *handle)
-{ fclose((FILE*)handle);
+{ (void)soap;
+  fclose((FILE*)handle);
 }
 
 static size_t dime_read(struct soap *soap, void *handle, char *buf, size_t len)
-{ return fread(buf, 1, len, (FILE*)handle);
+{ (void)soap;
+  return fread(buf, 1, len, (FILE*)handle);
 }
 
 static void *dime_write_open(struct soap *soap, const char *id, const char *type, const char *options)
 { // we can return NULL without setting soap->error if we don't want to use the streaming callback for this DIME attachment
   FILE *handle = NULL;
   char *name;
-  // get file name from options (not '\0' terminated)
+  (void)id; (void)type;
+  // get file name from options (here we assume it's not '\0' terminated), but the gsoap engine adds NULs to DIME options after reading content
   if (options)
   { size_t len = ((unsigned char)options[2] << 8) | ((unsigned char)options[3]); // option string length
     name = (char*)soap_malloc(soap, len + 1);
@@ -286,7 +291,8 @@ static void *dime_write_open(struct soap *soap, const char *id, const char *type
 }
 
 static void dime_write_close(struct soap *soap, void *handle)
-{ fclose((FILE*)handle);
+{ (void)soap;
+  fclose((FILE*)handle);
 }
 
 static int dime_write(struct soap *soap, void *handle, const char *buf, size_t len)

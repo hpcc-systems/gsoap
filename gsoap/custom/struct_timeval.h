@@ -1,10 +1,21 @@
 /*
 	struct_timeval.h
 
-	Custom serializer for struct timeval
+	Custom serializer for struct timeval as xsd:dateTime
+
+	Because time_t (binds to xsd:dateTime) lacks fractional seconds, struct
+	timeval can be used to represent microseconds.
 
 	#import this file into your gSOAP .h file to enable struct timeval
 	serialization and use the serializable xsd__dateTime type.
+
+	The struct timeval represents dates since 1970-01-01 with microsecond
+	precision:
+
+	struct timeval {
+		time_t       tv_sec;   // seconds
+		suseconds_t  tv_usec;  // and microseconds
+	};
 
 	To automate the wsdl2h-mapping of xsd:dateTime to struct timeval, add
 	this line to the typemap.dat file:
@@ -13,12 +24,17 @@
 
 	The typemap.dat file is used by wsdl2h to map types (wsdl2h option -t).
 
-	Link your code with struct_timeval.c
+	When using soapcpp2 option -q<name> or -p<name>, you must change
+	struct_timeval.c as follows:
+
+		#include "soapH.h"  ->  #include "nameH.h"
+
+	Compiler and link your code with struct_timeval.c
 
 gSOAP XML Web services tools
 Copyright (C) 2000-2007, Robert van Engelen, Genivia Inc., All Rights Reserved.
 This part of the software is released under ONE of the following licenses:
-GPL, the gSOAP public license, OR Genivia's license for commercial use.
+GPL or the gSOAP public license.
 --------------------------------------------------------------------------------
 gSOAP public license.
 
@@ -58,12 +74,4 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 --------------------------------------------------------------------------------
 */
 
-#include <sys/time.h>
-
-extern typedef volatile struct timeval
-{ extern long tv_sec;	// transient member: don't serialize
-  extern long tv_usec;	// transient member: don't serialize
-} xsd__dateTime;
-
-extern const char *soap_xsd__dateTime2s(struct soap*, const xsd__dateTime);
-extern int soap_s2xsd__dateTime(struct soap*, const char*, xsd__dateTime*);
+extern typedef struct timeval xsd__dateTime;

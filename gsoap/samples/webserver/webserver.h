@@ -6,7 +6,7 @@ webserver.h
 gSOAP XML Web services tools
 Copyright (C) 2001-2004, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -32,21 +32,28 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 */
 
 //gsoap ns service name:	webserver
-//gsoap ns service namespace:	http://www.cs.fsu.edu/~engelen/webserver.wsdl
+//gsoap ns service namespace:	http://websrv.cs.fsu.edu/~engelen/calc.wsdl
 //gsoap ns service location:	http://localhost:8080
 //gsoap ns service style:	rpc
 //gsoap ns service encoding:	encoded
 
-//gsoap ns schema namespace: urn:demowebserver
+//gsoap ns schema namespace:	urn:calc
 
-int ns__add(double, double, double*);		// HTTP POST request - response
-int ns__sub(double, double, double*);		// HTTP POST request - response
-int ns__mul(double, double, double*);		// HTTP POST request - response
-int ns__div(double, double, double*);		// HTTP POST request - response
+int ns__add(double a, double b, double *result); // HTTP POST request-response
+int ns__sub(double a, double b, double *result); // HTTP POST request-response
+int ns__mul(double a, double b, double *result); // HTTP POST request-response
+int ns__div(double a, double b, double *result); // HTTP POST request-response
+
+struct ns__record
+{
+  int SKU;
+  char *product_name;
+  int in_store;
+};
 
 //gsoap f schema namespace: urn:form
 
-int f__form1(void);	// one-way MEP
+int f__form1(void);	// one-way message (HTTP form)
 
 int f__form2(struct f__formResponse { double result; } *);
 

@@ -1,6 +1,6 @@
 ####### This is the input file for automake, which will generate Makefile.in ##########
 
-SUBDIRS = gsoap
+SUBDIRS = . gsoap
 CLEANFILES = *~
 VERYVERYCLEANFILES = *~ configure Makefile.in compile config.guess config.sub config.log autoscan.log \
 depcomp install-sh missing mkinstalldirs stamp-h.in config.h.in \
@@ -13,7 +13,7 @@ AUTOMAKE_OPTIONS = foreign 1.4
 ##
 ## Add support for pkg-config
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = gsoap.pc gsoap++.pc gsoapck.pc gsoapck++.pc  gsoapssl.pc gsoapssl++.pc
+pkgconfig_DATA = gsoap.pc gsoap++.pc gsoapck.pc gsoapck++.pc gsoapssl.pc gsoapssl++.pc
 
 EXTRA_DIST = gsoap.pc.in gsoap++.pc.in gsoapck.pc.in gsoapck++.pc.in gsoapssl.pc.in gsoapssl++.pc.in
 

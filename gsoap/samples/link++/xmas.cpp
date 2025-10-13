@@ -15,13 +15,14 @@
 	The xmas service in 'xmas' C++ namespace:
 	$ soapcpp2 -i -S -qxmas xmas.hpp
 
-	cc -o xmas.cgi xmas.cpp stdsoap2.cpp envC.cpp gmtProxy.cpp calccalcProxy.cpp xmasmashupService.cpp gmtC.cpp calcC.cpp xmasC.cpp
+        Compile and link together:
+	$ c++ -o xmas.cgi xmas.cpp stdsoap2.cpp envC.cpp gmtProxy.cpp calccalcProxy.cpp xmasmashupService.cpp gmtC.cpp calcC.cpp xmasC.cpp
 
 --------------------------------------------------------------------------------
 gSOAP XML Web services tools
 Copyright (C) 2001-2008, Robert van Engelen, Genivia, Inc. All Rights Reserved.
 This software is released under one of the following two licenses:
-GPL or Genivia's license for commercial use.
+GPL.
 --------------------------------------------------------------------------------
 GPL license.
 
@@ -53,7 +54,7 @@ A commercial use license is available from Genivia, Inc., contact@genivia.com
 int main()
 {
   xmas::mashupService service;
-  return service.serve();
+  return service.run(8082, 1);
 }
 
 /******************************************************************************\
@@ -64,8 +65,7 @@ int main()
 
 int xmas::mashupService::dtx(_XML x, struct _ns2__commingtotown *response)
 {
-  gmt::Proxy Time;
-  Time.soap_endpoint = "http://www.cs.fsu.edu/~engelen/gmtlitserver.cgi";
+  gmt::Proxy Time("http://localhost:8080");
 
   time_t now;
   if (Time.gmt(&now))
@@ -92,7 +92,7 @@ int xmas::mashupService::dtx(_XML x, struct _ns2__commingtotown *response)
 
   double sec = difftime(xmas, now);
   
-  calc::calcProxy Calc;
+  calc::calcProxy Calc("http://localhost:8081");
   double days;
 
   if (Calc.div(sec, 86400.0, &days))
